@@ -57,8 +57,25 @@ def transition_model(corpus, page, damping_factor):
     linked to by `page`. With probability `1 - damping_factor`, choose
     a link at random chosen from all pages in the corpus.
     """
-    raise NotImplementedError
+    
+    all_pages = set(corpus.keys())
+    num_pages = len(all_pages)
 
+    probabilities = {_page: 0.0 for _page in all_pages}
+
+    page_links = corpus[page]
+    if page_links and isinstance(page_links, set) and len(page_links) > 0:
+        num_links = len(page_links)
+        for _page in all_pages:
+            probabilities[_page] += (1 / num_pages) * (1.0 - damping_factor)
+        for link in page_links:
+            probabilities[link] += (1 / num_links) * damping_factor
+    else:
+        # An equal chance to travel to any page, no links.
+        for _page in all_pages:
+            probabilities[_page] += (1 / num_pages)
+
+    return probabilities
 
 def sample_pagerank(corpus, damping_factor, n):
     """
@@ -69,8 +86,44 @@ def sample_pagerank(corpus, damping_factor, n):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
-    raise NotImplementedError
 
+    all_pages = list(corpus.keys())
+    num_pages = len(all_pages)
+    visits = {page: 0 for page in all_pages}
+    page = random.choice(all_pages)
+    for _ in range(n):
+        visits[page] += 1
+        _transition_model = transition_model(corpus, page, damping_factor)
+        weights = [_transition_model[page] for page in all_pages]
+        page = random.choices(all_pages, weights)[0]
+    page_ranks = {page: visits[page] / n for page in all_pages}
+    return page_ranks
+
+def difference(ranks1, ranks2):
+    greatest_difference = 0.0
+    for page in ranks1.keys():
+        _difference = ranks1[page] - ranks2[page]
+        greatest_difference = max(greatest_difference, _difference)
+    return greatest_difference
+
+def iterate_pagerank_iteration(corpus, damping_factor, previous_ranks):
+
+    all_pages = list(corpus.keys())
+    num_pages = len(all_pages)    
+
+    updated_ranks = {page: (1.0 - damping_factor) / num_pages for page in all_pages}
+
+    for page in all_pages:
+        page_links = corpus[page]
+        if page_links and isinstance(page_links, set) and len(page_links) > 0:
+            num_links = len(page_links)
+            for link in page_links:
+                updated_ranks[link] += damping_factor * (previous_ranks[page] / num_links)
+        else:
+            for _page in all_pages:
+                updated_ranks[link] += damping_factor * (previous_ranks[_page] / num_pages)
+
+    return updated_ranks
 
 def iterate_pagerank(corpus, damping_factor):
     """
@@ -81,7 +134,18 @@ def iterate_pagerank(corpus, damping_factor):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
-    raise NotImplementedError
+
+    all_pages = list(corpus.keys())
+    num_pages = len(all_pages)    
+    page_ranks = {page: 1.0 / num_pages for page in all_pages}
+
+    while True:
+        updated_ranks = iterate_pagerank_iteration(corpus, damping_factor, page_ranks)
+        if difference(updated_ranks, page_ranks) < 0.001:
+            break
+        page_ranks = updated_ranks
+
+    return page_ranks
 
 
 if __name__ == "__main__":

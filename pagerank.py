@@ -11,6 +11,7 @@ def main():
     if len(sys.argv) != 2:
         sys.exit("Usage: python pagerank.py corpus")
     corpus = crawl(sys.argv[1])
+
     ranks = sample_pagerank(corpus, DAMPING, SAMPLES)
     print(f"PageRank Results from Sampling (n = {SAMPLES})")
     for page in sorted(ranks):
@@ -71,7 +72,6 @@ def transition_model(corpus, page, damping_factor):
         for link in page_links:
             probabilities[link] += (1 / num_links) * damping_factor
     else:
-        # An equal chance to travel to any page, no links.
         for _page in all_pages:
             probabilities[_page] += (1 / num_pages)
 
@@ -121,7 +121,7 @@ def iterate_pagerank_iteration(corpus, damping_factor, previous_ranks):
                 updated_ranks[link] += damping_factor * (previous_ranks[page] / num_links)
         else:
             for _page in all_pages:
-                updated_ranks[link] += damping_factor * (previous_ranks[_page] / num_pages)
+                updated_ranks[_page] += damping_factor * (previous_ranks[page] / num_pages)
 
     return updated_ranks
 
